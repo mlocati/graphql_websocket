@@ -2,9 +2,9 @@
 
 namespace Concrete\Package\Concrete5GraphqlWebsocket;
 
-use Concrete\Core\Http\ServerInterface;
 use Concrete\Core\Package\Package;
 use Concrete\Core\Routing\RouterInterface;
+use Concrete5GraphqlWebsocket\Console\WebsocketRunnerCommand;
 use Concrete5GraphqlWebsocket\SchemaBuilder;
 use Concrete5GraphqlWebsocket\Websocket;
 use Concrete5GraphqlWebsocket\WebsocketHelpers;
@@ -23,7 +23,10 @@ class Controller extends Package
     public function on_start()
     {
         $this->app->make(RouterInterface::class)->register('/graphql', 'Concrete5GraphqlWebsocket\Api::view');
-        Websocket::run();
+        $this->registerAutoload();
+        if ($this->app->isRunThroughCommandLineInterface()) {
+            $this->registerCLICommands();
+        }
     }
 
     public function install()
@@ -58,5 +61,18 @@ class Controller extends Package
     private function installXML()
     {
         $this->installContentFile('config/install.xml');
+    }
+
+    private function registerAutoload()
+    {
+        $autoloader = $this->getPackagePath() . '/vendor/autoload.php';
+        if (file_exists($autoloader)) {
+            require_once $autoloader;
+        }
+    }
+    private function registerCLICommands()
+    {
+        $console = $this->app->make('console');
+        $console->add(new WebsocketRunnerCommand());
     }
 }
